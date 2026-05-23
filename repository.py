@@ -17,8 +17,8 @@ def save_products_to_db(products_data, session):
             description =product["description"],
             price=product["price"]
         )
-        session.add(db_product)
+        session.add(db_product) # equivalent for INSERT in SQL
 
-    session.commit()
+    session.commit() # writes to the DB
 
 

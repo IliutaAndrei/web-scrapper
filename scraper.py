@@ -1,10 +1,25 @@
+import os
 from playwright.sync_api import sync_playwright
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-base_page_url = "https://www.web-scraping.dev"
-login_url = "https://www.web-scraping.dev/login"
+def get_env_value(name):
+    value = os.getenv(name)
+
+    if not value:
+        raise ValueError(f"Missing required env variable: {name}")
+
+    return value
+
+BASE_PAGE_URL = get_env_value("BASE_PAGE_URL")
+LOGIN_URL = get_env_value("LOGIN_URL")
+USERNAME = get_env_value("SCRAPER_USERNAME")
+PASSWORD = get_env_value("SCRAPER_PASSWORD")
+
 
 def scrape_products():
     products_data = []
@@ -12,14 +27,14 @@ def scrape_products():
         browser = p.chromium.launch(headless=False, slow_mo=100)
         page = browser.new_page()
 
-        page.goto(login_url)
-        page.get_by_placeholder("user123").fill("user123")
-        page.get_by_placeholder("password").fill("password")
+        page.goto(LOGIN_URL)
+        page.get_by_placeholder("user123").fill(USERNAME)
+        page.get_by_placeholder("password").fill(PASSWORD)
 
         page.get_by_role("button", name="Submit").click()
         page.wait_for_timeout(1000)  # for safe loading
 
-        current_url = urljoin(base_page_url, "/products")
+        current_url = urljoin(BASE_PAGE_URL, "/products")
 
         while True:
             page.goto(current_url)
@@ -46,7 +61,7 @@ def scrape_products():
                 if not img_relative:
                     continue
 
-                img = urljoin(base_page_url, img_relative)
+                img = urljoin(BASE_PAGE_URL, img_relative)
 
                 product_data = {
                     "title": title,
@@ -73,7 +88,7 @@ def scrape_products():
             if not next_href:
                 break
 
-            current_url = urljoin(base_page_url, str(next_href))
+            current_url = urljoin(BASE_PAGE_URL, str(next_href))
         browser.close()
 
     return products_data
