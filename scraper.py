@@ -4,6 +4,8 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
+from models import Product
+
 load_dotenv()
 
 
@@ -21,7 +23,7 @@ USERNAME = get_env_value("SCRAPER_USERNAME")
 PASSWORD = get_env_value("SCRAPER_PASSWORD")
 
 
-def scrape_products():
+def scrape_products() -> list[Product]:
     products_data = []
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False, slow_mo=100)
