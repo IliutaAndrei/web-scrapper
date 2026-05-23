@@ -1,10 +1,8 @@
 from sqlalchemy import select, Boolean
-from sqlalchemy.orm import Session
-
 from models import Product
 
 
-def save_products_to_db(products_data: list[dict], session: Session) -> None:
+def save_products_to_db(products_data, session):
     for product in products_data:
 
         existing_product = session.query(Product).filter_by(
@@ -25,19 +23,19 @@ def save_products_to_db(products_data: list[dict], session: Session) -> None:
     session.commit() # writes to the DB
 
 
-def get_product_by_id(session: Session, product_id: int) -> Product | None:
+def get_product_by_id(session, product_id):
     statement = select(Product).where(Product.id == product_id)
 
     return session.scalar(statement)
 
 
-def get_all_products(session: Session):
+def get_all_products(session):
     statement = select(Product)
 
     return session.scalars(statement).all()
 
 
-def update_product(session: Session, product_id: int, new_product: Product) -> Product | None:
+def update_product(session, product_id, new_product):
     product = get_product_by_id(session, product_id)
 
     if not product:
@@ -53,7 +51,7 @@ def update_product(session: Session, product_id: int, new_product: Product) -> P
     return product
 
 
-def delete_product(session: Session, product_id: int) -> bool:
+def delete_product(session, product_id):
     product = get_product_by_id(session, product_id)
 
     if not product:

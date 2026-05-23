@@ -1,0 +1,8 @@
+* {
+    background-color: brown;
+}
+
+.product-card img {
+    width: 182px;
+    height: 182px;
+}

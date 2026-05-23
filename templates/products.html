@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='styles.css')}}">
+</head>
+<body>
+<div class="products">
+    {% for product in products %}
+    <div class="product-card">
+        <h3>{{ product.title }}</h3>
+        <img src="{{ product.img }}" alt="product photo">
+        <p class="description">{{ product.description }}</p>
+        <p class="price">{{ product.price }}$</p>
+        <a href="{{ url_for('edit_product_page', product_id=product.id) }}">Edit</a>
+        <button type="button" name="Delete">Delete</button>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>
