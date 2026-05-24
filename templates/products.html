@@ -3,18 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Products</title>
-    <link rel="stylesheet" href="{{url_for('static', filename='styles.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='products.css')}}">
 </head>
 <body>
+
+<h1 class="page-title">Products</h1>
+
 <div class="products">
     {% for product in products %}
     <div class="product-card">
-        <h3>{{ product.title }}</h3>
-        <img src="{{ product.img }}" alt="product photo">
-        <p class="description">{{ product.description }}</p>
-        <p class="price">{{ product.price }}$</p>
-        <a href="{{ url_for('edit_product_page', product_id=product.id) }}">Edit</a>
-        <button type="button" name="Delete">Delete</button>
+        <div class="thumbnail">
+            <img src="{{ product.img }}" alt="product photo">
+        </div>
+        <div class="description">
+             <h3>{{ product.title }}</h3>
+            <div class="short-description">{{ product.description }}</div>
+        </div>
+        <div class="price-wrap">
+            <div class="price">{{ product.price }}$</div>
+        </div>
+        <div class="controls">
+            <a href="{{ url_for('edit_product_page', product_id=product.id) }}">Edit</a>
+            <form action="{{ url_for("delete_product_page", product_id=product.id) }}" method="POST">
+                <button type="submit">Delete</button>
+            </form>
+        </div>
     </div>
     {% endfor %}
 </div>

@@ -1,21 +1,31 @@
 from flask import Flask, render_template, request, redirect, url_for
-from sqlalchemy.engine import url
 
-from repository import get_all_products, get_product_by_id, update_product
+from repository import get_all_products, get_product_by_id, update_product, delete_product
 from database import SessionLocal
 app = Flask(__name__)
+
+@app.route("/")
+def home():
+    with SessionLocal() as session:
+        products = get_all_products(session)
+
+        return render_template("home.html", products=products)
 
 @app.route("/products")
 def get_all_products_page():
     with SessionLocal() as session:
         products = get_all_products(session)
 
-    return render_template("products.html", products=products)
+        for product in products:
+            print(product.id, product.title, product.price)
 
-@app.route("/products/<int:product_id>/edit", methods=["GET", "POST"])
+        return render_template("products.html", products=products)
+
+@app.route("/products/<product_id>/edit", methods=["GET", "POST"])
 def edit_product_page(product_id):
     with SessionLocal() as session:
         product = get_product_by_id(session, product_id)
+
         if not product:
             return "No product Found", 404
 
@@ -30,4 +40,19 @@ def edit_product_page(product_id):
 
             return redirect(url_for("get_all_products_page"))
 
-    return render_template("edit_product_page.html", product=product)
+        return render_template("edit_product_page.html", product=product)
+
+
+@app.route("/products/<product_id>/delete", methods=["POST"])
+def delete_product_page(product_id):
+    with SessionLocal() as session:
+        product = get_product_by_id(session, product_id)
+
+        if not product:
+            return "No product found", 404
+
+        if request.method == "POST":
+            delete_product(session, product_id)
+
+        return redirect(url_for("get_all_products_page"))
+

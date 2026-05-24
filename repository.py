@@ -1,4 +1,4 @@
-from sqlalchemy import select, Boolean
+from sqlalchemy import select
 from models import Product
 
 
@@ -10,15 +10,17 @@ def save_products_to_db(products_data, session):
         ).first()
 
         if existing_product:
-            continue
-
-        db_product = Product(
-            title=product["title"],
-            img=product["img"],
-            description =product["description"],
-            price=product["price"]
-        )
-        session.add(db_product) # equivalent for INSERT in SQL
+            existing_product.img = product["img"]
+            existing_product.description = product["description"]
+            existing_product.price = product["price"]
+        else:
+            db_product = Product(
+                title=product["title"],
+                img=product["img"],
+                description =product["description"],
+                price=product["price"]
+            )
+            session.add(db_product) # equivalent for INSERT in SQL
 
     session.commit() # writes to the DB
 
@@ -30,9 +32,7 @@ def get_product_by_id(session, product_id):
 
 
 def get_all_products(session):
-    statement = select(Product)
-
-    return session.scalars(statement).all()
+    return session.query(Product).all()
 
 
 def update_product(session, product_id, new_product):
@@ -47,6 +47,7 @@ def update_product(session, product_id, new_product):
     product.price = new_product["price"]
 
     session.commit()
+    session.refresh(product)
 
     return product
 
