@@ -1,0 +1,6 @@
+flask
+sqlalchemy
+playwright
+beautifulsoup4
+python-dotenv
+apscheduler

@@ -52,6 +52,7 @@ web-products-scraper/
 │
 ├── static/
 │   └── products.css
+│   ├── edit.css
 │
 ├── templates/
 │   ├── home.html
@@ -66,6 +67,7 @@ web-products-scraper/
 ├── repository.py
 ├── scraper.py
 ├── scheduler.py
+├── requirements.txt
 └── README.md
 ```
 
@@ -109,6 +111,11 @@ If a product already exists, its information can be updated instead of creating 
 The Flask application provides a simple interface where products can be viewed, edited, and deleted.
 
 Available pages:
+
+```text
+/
+```
+Home root
 
 ```text
 /products
