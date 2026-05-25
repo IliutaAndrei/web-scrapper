@@ -1,36 +1,76 @@
-# Web Products Scraper
+# Web Products Scraper & Invoice Parser
 
-A Python application that authenticates on a web scraping practice website, extracts product data, stores it in a SQL database, and provides a simple Flask web interface for viewing, editing, and deleting the saved products.
+A Python web application that authenticates on a target website, scrapes product data, stores it in a SQL database, and provides a simple Flask interface for product management.
+
+The project also includes a PDF invoice parser that allows users to upload invoice PDFs, extract product information, generate a CSV file, and download it directly from the web interface.
 
 ## Project Overview
 
-This project was built as a technical task focused on web scraping, database persistence, scheduled execution, and basic web interface development.
+This project was built as a technical task focused on:
 
-The application logs into the target website, accesses the products page, extracts product information, and saves it into a database. The saved products can then be managed through a simple Flask interface.
+- Web scraping
+- Database persistence
+- Scheduled task execution
+- Flask web interface development
+- PDF parsing
+- CSV export
+
+The application logs into a target website, extracts product information, and stores it in a database. The saved products can be viewed, edited, and deleted through a Flask interface.
+
+Additionally, invoice PDF files can be uploaded through the web application. The system extracts product data from the invoice and exports it as a CSV file.
 
 ## Features
+
+### Web Scraping & Product Management
 
 - Login-based web scraping using Playwright
 - Product data extraction using BeautifulSoup
 - SQL database integration using SQLAlchemy ORM
-- Product storage with duplicate prevention
-- Product update when existing data changes
+- Duplicate prevention using unique product titles
+- Existing product update when scraped data changes
 - Flask web interface for displaying products
 - Edit product functionality
 - Delete product functionality
 - Basic CSS styling
 - Environment variable configuration using `.env`
-- Periodic scraper execution using APScheduler
-- Alternative scheduling support using Windows Task Scheduler
+- Scheduled scraping using APScheduler
 
-## Extracted Product Data
+### PDF Invoice Processing
 
-For each product, the scraper extracts:
+- PDF upload through Flask
+- File validation for PDF uploads
+- Secure filename handling using `secure_filename`
+- Uploaded files saved with timestamp-based unique names
+- PDF text extraction using pdfplumber
+- Product line parsing using regular expressions
+- CSV generation using pandas
+- CSV download using Flask `send_file`
+
+## Extracted Product Data From Website
+
+For each scraped product, the application extracts:
 
 - Product title
 - Product image URL
 - Product price
 - Product description
+
+## Extracted Product Data From Invoice PDF
+
+For each product line found in the invoice PDF, the application extracts:
+
+- Product code
+- Product name
+- Unit price
+- Currency
+- Quantity
+
+Example CSV structure:
+
+```csv
+product_code,product_name,unit_price,currency,quantity
+172812FXX,COMUTATOR PORNIRE FEBIXX,251.96,RON,-1
+```
 
 ## Technologies Used
 
@@ -40,6 +80,8 @@ For each product, the scraper extracts:
 - Playwright
 - BeautifulSoup
 - APScheduler
+- pdfplumber
+- pandas
 - python-dotenv
 - HTML
 - CSS
@@ -50,16 +92,30 @@ For each product, the scraper extracts:
 ```text
 web-products-scraper/
 │
+├── generated/
+│   └── .gitkeep
+│
+├── services/
+│   ├── csv_generator.py
+│   └── pdf_parser.py
+│
 ├── static/
-│   └── products.css
 │   ├── edit.css
+│   ├── home.css
+│   ├── invoices.css
+│   └── products.css
 │
 ├── templates/
+│   ├── edit_product.html
 │   ├── home.html
 │   ├── products.html
-│   └── edit_product_page.html
+│   └── upload_invoice.html
 │
-├── .env
+├── uploads/
+│   └── .gitkeep
+│
+├── .env.example
+├── .gitignore
 ├── app.py
 ├── database.py
 ├── main.py
@@ -73,13 +129,13 @@ web-products-scraper/
 
 ## How It Works
 
-### 1. Scraping
+### 1. Web Scraping
 
 The scraper uses Playwright to open a browser, authenticate on the website, and access the products page.
 
 After the page is loaded, BeautifulSoup is used to parse the HTML and extract product information.
 
-The scraper collects data such as:
+The extracted data includes:
 
 ```text
 title
@@ -92,7 +148,7 @@ price
 
 Products are stored in a SQL database using SQLAlchemy ORM.
 
-The `Product` model contains the following fields:
+The `Product` model contains:
 
 ```text
 id
@@ -102,20 +158,21 @@ description
 price
 ```
 
-The `title` field is unique, so the application avoids inserting duplicate products.
+The `title` field is unique, so duplicate products are avoided.
 
-If a product already exists, its information can be updated instead of creating a duplicate entry.
+When the scraper finds a product that already exists, the application updates the existing record instead of inserting a duplicate.
 
-### 3. Web Interface
+### 3. Flask Web Interface
 
 The Flask application provides a simple interface where products can be viewed, edited, and deleted.
 
-Available pages:
+Available routes:
 
 ```text
 /
 ```
-Home root
+
+Displays the home page.
 
 ```text
 /products
@@ -135,9 +192,44 @@ Allows editing an existing product.
 
 Deletes an existing product.
 
+
+### 4. PDF Invoice Upload & CSV Export
+
+The application also includes a PDF invoice upload page.
+
+Available route:
+
+```text
+/invoices/upload
+```
+
+The invoice processing flow is:
+
+```text
+Upload PDF
+    ↓
+Save PDF in uploads/
+    ↓
+Extract text using pdfplumber
+    ↓
+Parse product lines using regex
+    ↓
+Generate CSV using pandas
+    ↓
+Return CSV as download
+```
+
+Generated CSV files are saved in the `generated/` folder.
+
+Uploaded PDF files are saved in the `uploads/` folder.
+
+Both folders are ignored by Git, except for `.gitkeep` files used to preserve the folder structure.
+
 ## Environment Variables
 
 The application uses a `.env` file for configuration.
+
+Create a `.env` file based on `.env.example`.
 
 Example:
 
@@ -187,6 +279,8 @@ Install Playwright browsers:
 playwright install
 ```
 
+Create a `.env` file based on `.env.example` and fill in the required values.
+
 ## Running the Scraper Manually
 
 To run the scraper manually:
@@ -199,7 +293,7 @@ This will:
 
 ```text
 1. Start the scraper
-2. Login to the website
+2. Log in to the website
 3. Extract product data
 4. Save or update products in the database
 ```
@@ -209,13 +303,19 @@ This will:
 To start the Flask web interface:
 
 ```bash
-flask --app app run --debug
+flask --app app run 
 ```
 
 Then open:
 
 ```text
 http://127.0.0.1:5000/products
+```
+
+To access the invoice upload page:
+
+```text
+http://127.0.0.1:5000/invoices/upload
 ```
 
 ## Running the Scheduler
@@ -236,34 +336,48 @@ The scheduler uses a cron-style trigger:
 Every day, every hour from 12:00 to 18:00, at minute 0.
 ```
 
-## Windows Task Scheduler Alternative
 
-The scraper can also be scheduled using Windows Task Scheduler.
+## Running Flask and Scheduler Together
 
-Recommended setup:
+The Flask application and the scheduler can be run at the same time using two separate terminals.
 
-```text
-Trigger:
-Daily
-Start: 12:00 PM
-Repeat every: 1 hour
-Duration: 7 hours
+Terminal 1:
+
+```bash
+flask --app app run --debug
 ```
 
-Action:
+Terminal 2:
 
-```text
-Program/script:
-path\to\.venv\Scripts\python.exe
-
-Add arguments:
-main.py
-
-Start in:
-path\to\project-folder
+```bash
+python scheduler.py
 ```
 
-This allows Windows to run the scraper automatically without keeping `scheduler.py` open.
+The Flask app handles the user interface, while the scheduler handles automatic scraping.
+
+## requirements.txt
+
+The project dependencies should include:
+
+```txt
+flask
+sqlalchemy
+playwright
+beautifulsoup4
+python-dotenv
+apscheduler
+pdfplumber
+pandas
+```
+
+Depending on the database used, an additional driver may be required.
+
+For PostgreSQL, for example:
+
+```txt
+psycopg2-binary
+```
+
 
 ## Main Application Flow
 
@@ -281,26 +395,45 @@ app.py
 Displays products in Flask web interface
 ```
 
+```text
+PDF upload
+    ↓
+services/pdf_parser.py
+    ↓
+Extracts product data from invoice PDF
+    ↓
+services/csv_generator.py
+    ↓
+Generates CSV file
+    ↓
+Flask send_file
+    ↓
+Downloads CSV in browser
+```
+
 ## Current Functionalities
 
 - Scrape products from the target website
 - Save products into the database
 - Prevent duplicate products by title
+- Update existing products when scraped data changes
 - Display products in a web page
 - Edit existing products
 - Delete existing products
 - Schedule automatic scraping
+- Upload invoice PDF files
+- Extract product data from PDF invoices
+- Generate CSV files from extracted invoice data
+- Download generated CSV files from the browser
 
-## Notes
+## Future Improvements
 
-The Flask application and the scheduler can be run at the same time using two separate terminals:
+Possible improvements for this project:
 
-```bash
-flask --app app run --debug
-```
-
-```bash
-python scheduler.py
-```
-
-The Flask app handles the user interface, while the scheduler handles automatic scraping.
+- Add flash messages after edit/delete/upload actions
+- Add stronger validation for uploaded PDF files
+- Add error handling for unsupported invoice formats
+- Add logging instead of simple terminal output
+- Add pagination in the Flask product interface
+- Add Docker support
+- Add unit tests for repository and parser functions
