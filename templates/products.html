@@ -30,6 +30,8 @@
         </div>
         <div class="price-wrap">
             <div class="price">{{ product.price }} {{ product.currency }}</div>
+            <div>Rate:{{ product.exchange_rate }}</div>
+            <div>RON: {{ product.price_ron }}</div>
         </div>
         <div class="controls">
             <a href="{{ url_for('edit_product_page', product_id=product.id) }}">Edit</a>

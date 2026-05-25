@@ -1,7 +1,9 @@
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Text
+from sqlalchemy import Text, Numeric
+
+from decimal import Decimal
 
 class Base(DeclarativeBase):
     pass
@@ -15,6 +17,6 @@ class Product(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     price: Mapped[str] = mapped_column(nullable=False)
     currency: Mapped[str] = mapped_column(nullable=False)
+    exchange_rate: Mapped[Decimal] = mapped_column(Numeric(10,4), nullable=False)
+    price_ron: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
 
-    def __repr__(self):
-        return f"({self.id}) {self.title} {self.description} {self.img} {self.price}"

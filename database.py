@@ -5,7 +5,6 @@ from sqlalchemy.orm import sessionmaker
 from models import Base
 
 load_dotenv()
-
 DATABASE_URL = os.getenv("CONNECTION_STRING_DB")
 
 if not DATABASE_URL:
