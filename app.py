@@ -1,8 +1,22 @@
-from flask import Flask, render_template, request, redirect, url_for
+import os.path
+from datetime import datetime
+
+from flask import Flask, render_template, request, redirect, url_for, flash
+from werkzeug.utils import secure_filename
 
 from repository import get_all_products, get_product_by_id, update_product, delete_product
 from database import SessionLocal
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+ALLOWED_EXTENSIONS = {'pdf'}
 app = Flask(__name__)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.secret_key = "dev-secret-key"
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/")
 def home():
@@ -40,7 +54,7 @@ def edit_product_page(product_id):
 
             return redirect(url_for("get_all_products_page"))
 
-        return render_template("edit_product_page.html", product=product)
+        return render_template("edit_product.html", product=product)
 
 
 @app.route("/products/<product_id>/delete", methods=["POST"])
@@ -56,3 +70,29 @@ def delete_product_page(product_id):
 
         return redirect(url_for("get_all_products_page"))
 
+@app.route("/invoices/upload", methods=["GET", "POST"])
+def upload_invoices():
+    if request.method == "POST":
+        if 'pdf' not in request.files:
+            flash("No file part", "error")
+            return redirect(request.url)
+
+        file = request.files["pdf"]
+        original_filename = file.filename
+
+        if not original_filename:
+            flash("No selected file", "error")
+            return redirect(request.url)
+
+        if file and allowed_file(original_filename):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = secure_filename(original_filename)
+            unique_filename = f"{timestamp}_{filename}"
+
+            file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
+            file.save(file_path)
+
+            flash("File uploaded", "success")
+            return redirect(request.url)
+
+    return render_template("upload_invoice.html")
