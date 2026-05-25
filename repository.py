@@ -1,4 +1,6 @@
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from models import Product
 
 
@@ -13,12 +15,14 @@ def save_products_to_db(products_data, session):
             existing_product.img = product["img"]
             existing_product.description = product["description"]
             existing_product.price = product["price"]
+            existing_product.currency = product["currency"]
         else:
             db_product = Product(
                 title=product["title"],
                 img=product["img"],
                 description =product["description"],
-                price=product["price"]
+                price=product["price"],
+                currency=product["currency"]
             )
             session.add(db_product) # equivalent for INSERT in SQL
 
@@ -45,6 +49,7 @@ def update_product(session, product_id, new_product):
     product.img = new_product["img"]
     product.description = new_product["description"]
     product.price = new_product["price"]
+    product.currency = new_product["currency"]
 
     session.commit()
     session.refresh(product)
@@ -62,3 +67,8 @@ def delete_product(session, product_id):
     session.commit()
 
     return True
+
+def search_product_by_title(session: Session, keyword):
+    return session.query(Product).filter(
+        Product.title.ilike(f"%{keyword}%")
+    ).all()

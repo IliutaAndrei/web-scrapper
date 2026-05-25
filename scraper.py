@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 def get_env_value(name):
     value = os.getenv(name)
 
@@ -40,6 +39,7 @@ def scrape_products() -> list[dict]:
         while True:
             page.goto(current_url)
 
+            currency = "USD"
             html = page.content()
             soup = BeautifulSoup(html, "html.parser")
 
@@ -68,7 +68,8 @@ def scrape_products() -> list[dict]:
                     "title": title,
                     "img": img,
                     "description": desc,
-                    "price": price
+                    "price": price,
+                    "currency": currency
                 }
 
                 products_data.append(product_data)

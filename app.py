@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
 
-from repository import get_all_products, get_product_by_id, update_product, delete_product
+from repository import get_all_products, get_product_by_id, update_product, delete_product, search_product_by_title
 from database import SessionLocal
 from services.csv_generator import generate_products_csv
 from services.pdf_parser import extract_products_from_pdf
@@ -31,13 +31,16 @@ def home():
 
 @app.route("/products")
 def get_all_products_page():
+    search = request.args.get("search")
+
     with SessionLocal() as session:
-        products = get_all_products(session)
 
-        for product in products:
-            print(product.id, product.title, product.price)
+        if search:
+            products = search_product_by_title(session, search)
+        else:
+            products = get_all_products(session)
 
-        return render_template("products.html", products=products)
+        return render_template("products.html", products=products, search=search)
 
 @app.route("/products/<product_id>/edit", methods=["GET", "POST"])
 def edit_product_page(product_id):
@@ -52,7 +55,8 @@ def edit_product_page(product_id):
                 "title": request.form["title"],
                 "img": request.form["img"],
                 "description": request.form["description"],
-                "price": request.form["price"]
+                "price": request.form["price"],
+                "currency": request.form["currency"]
             }
             update_product(session, product_id, new_product)
 

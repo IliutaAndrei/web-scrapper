@@ -14,6 +14,7 @@ class Product(Base):
     img: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     price: Mapped[str] = mapped_column(nullable=False)
+    currency: Mapped[str] = mapped_column(nullable=False)
 
     def __repr__(self):
         return f"({self.id}) {self.title} {self.description} {self.img} {self.price}"
