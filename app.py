@@ -1,15 +1,19 @@
 import os.path
 from datetime import datetime
 
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
 
 from repository import get_all_products, get_product_by_id, update_product, delete_product
 from database import SessionLocal
+from services.csv_generator import generate_products_csv
+from services.pdf_parser import extract_products_from_pdf
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+GENERATED_FOLDER= os.path.join(BASE_DIR, "generated")
 ALLOWED_EXTENSIONS = {'pdf'}
+
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.secret_key = "dev-secret-key"
@@ -92,7 +96,13 @@ def upload_invoices():
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
             file.save(file_path)
 
+            csv_filename = f"{timestamp}_invoices_products.csv"
+            csv_path = os.path.join(GENERATED_FOLDER, csv_filename)
+
+            products = extract_products_from_pdf(file_path)
+            generate_products_csv(products,csv_path)
+
             flash("File uploaded", "success")
-            return redirect(request.url)
+            return send_file(csv_path, as_attachment=True, download_name=f"{timestamp}_invoice.csv")
 
     return render_template("upload_invoice.html")
