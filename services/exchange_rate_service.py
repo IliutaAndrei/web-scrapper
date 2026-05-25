@@ -16,9 +16,6 @@ def get_price_in_ron(price, exchange_rate):
 
 
 def get_exchange_rate(currency):
-    if currency == "RON":
-        return Decimal("1")
-
     response = requests.get(BNR_URL)
     response.raise_for_status()
 

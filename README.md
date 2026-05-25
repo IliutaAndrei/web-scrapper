@@ -4,6 +4,8 @@ A Python web application that authenticates on a target website, scrapes product
 
 The project also includes a PDF invoice parser that allows users to upload invoice PDFs, extract product information, generate a CSV file, and download it directly from the web interface.
 
+Additionally, the application retrieves exchange rates from the BNR XML feed and calculates product prices in RON.
+
 ## Project Overview
 
 This project was built as a technical task focused on:
@@ -14,10 +16,13 @@ This project was built as a technical task focused on:
 - Flask web interface development
 - PDF parsing
 - CSV export
+- Currency conversion to RON
 
-The application logs into a target website, extracts product information, and stores it in a database. The saved products can be viewed, edited, and deleted through a Flask interface.
+The application logs into a target website, extracts product information, and stores it in a database. The saved products can be viewed, searched, edited, and deleted through a Flask interface.
 
-Additionally, invoice PDF files can be uploaded through the web application. The system extracts product data from the invoice and exports it as a CSV file.
+Invoice PDF files can also be uploaded through the web application. The system extracts product data from the invoice and exports it as a CSV file.
+
+For scraped products, the application stores the original price and currency, retrieves the daily exchange rate, calculates the price in RON, and saves the result in the database.
 
 ## Features
 
@@ -28,7 +33,11 @@ Additionally, invoice PDF files can be uploaded through the web application. The
 - SQL database integration using SQLAlchemy ORM
 - Duplicate prevention using unique product titles
 - Existing product update when scraped data changes
+- Product price and currency storage
+- Exchange rate retrieval from BNR XML
+- Automatic conversion of product prices to RON
 - Flask web interface for displaying products
+- Product search by title
 - Edit product functionality
 - Delete product functionality
 - Basic CSS styling
@@ -48,12 +57,15 @@ Additionally, invoice PDF files can be uploaded through the web application. The
 
 ## Extracted Product Data From Website
 
-For each scraped product, the application extracts:
+For each scraped product, the application extracts and stores:
 
 - Product title
 - Product image URL
 - Product price
+- Product currency
 - Product description
+- Exchange rate
+- Price converted to RON
 
 ## Extracted Product Data From Invoice PDF
 
@@ -82,6 +94,7 @@ product_code,product_name,unit_price,currency,quantity
 - APScheduler
 - pdfplumber
 - pandas
+- requests
 - python-dotenv
 - HTML
 - CSS
@@ -93,10 +106,10 @@ product_code,product_name,unit_price,currency,quantity
 web-products-scraper/
 │
 ├── generated/
-│   └── .gitkeep
 │
 ├── services/
 │   ├── csv_generator.py
+│   ├── exchange_rate_service.py
 │   └── pdf_parser.py
 │
 ├── static/
@@ -112,7 +125,6 @@ web-products-scraper/
 │   └── upload_invoice.html
 │
 ├── uploads/
-│   └── .gitkeep
 │
 ├── .env.example
 ├── .gitignore
@@ -121,9 +133,9 @@ web-products-scraper/
 ├── main.py
 ├── models.py
 ├── repository.py
-├── scraper.py
-├── scheduler.py
 ├── requirements.txt
+├── scheduler.py
+├── scraper.py
 └── README.md
 ```
 
@@ -142,7 +154,10 @@ title
 image URL
 description
 price
+currency
 ```
+
+The product currency is stored separately from the price so that exchange rate conversion can be performed.
 
 ### 2. Database Storage
 
@@ -156,15 +171,45 @@ title
 img
 description
 price
+currency
+exchange_rate
+price_ron
 ```
 
 The `title` field is unique, so duplicate products are avoided.
 
 When the scraper finds a product that already exists, the application updates the existing record instead of inserting a duplicate.
 
-### 3. Flask Web Interface
+During save/update, the application retrieves the exchange rate for the product currency and calculates the price in RON.
 
-The Flask application provides a simple interface where products can be viewed, edited, and deleted.
+### 3. Currency Conversion
+
+The application retrieves exchange rates from the BNR XML feed.
+
+The exchange rate service:
+
+```text
+1. Requests the BNR XML file
+2. Parses the XML using ElementTree
+3. Finds the rate matching the product currency
+4. Returns the exchange rate as Decimal
+5. Calculates the product price in RON
+```
+
+For example:
+
+```text
+price = 24.99
+currency = USD
+exchange_rate = current USD/RON rate
+price_ron = price * exchange_rate
+```
+
+If the currency is already RON, the exchange rate is treated as `1`.
+
+### 4. Flask Web Interface
+
+The Flask application provides a simple interface where products can be viewed, searched, edited, and deleted.
 
 Available routes:
 
@@ -181,10 +226,18 @@ Displays the home page.
 Displays all saved products.
 
 ```text
+/products?search=<keyword>
+```
+
+Filters products by title.
+
+```text
 /products/<product_id>/edit
 ```
 
 Allows editing an existing product.
+
+When a product is edited, the application recalculates the exchange rate and price in RON based on the updated price and currency.
 
 ```text
 /products/<product_id>/delete
@@ -192,8 +245,7 @@ Allows editing an existing product.
 
 Deletes an existing product.
 
-
-### 4. PDF Invoice Upload & CSV Export
+### 5. PDF Invoice Upload & CSV Export
 
 The application also includes a PDF invoice upload page.
 
@@ -223,7 +275,7 @@ Generated CSV files are saved in the `generated/` folder.
 
 Uploaded PDF files are saved in the `uploads/` folder.
 
-Both folders are ignored by Git, except for `.gitkeep` files used to preserve the folder structure.
+Both folders are ignored by Git.
 
 ## Environment Variables
 
@@ -238,7 +290,16 @@ BASE_PAGE_URL=https://www.web-scraping.dev
 LOGIN_URL=https://www.web-scraping.dev/login
 SCRAPER_USERNAME=your_username
 SCRAPER_PASSWORD=your_password
+BNR_URL=https://www.bnr.ro/nbrfxrates.xml
 DATABASE_URL=your_database_url
+```
+
+Do not commit the real `.env` file to GitHub.
+
+The repository should contain only:
+
+```text
+.env.example
 ```
 
 ## Installation
@@ -295,7 +356,9 @@ This will:
 1. Start the scraper
 2. Log in to the website
 3. Extract product data
-4. Save or update products in the database
+4. Retrieve exchange rates
+5. Calculate product prices in RON
+6. Save or update products in the database
 ```
 
 ## Running the Flask Application
@@ -303,7 +366,13 @@ This will:
 To start the Flask web interface:
 
 ```bash
-flask --app app run 
+flask --app app run
+```
+
+For development mode:
+
+```bash
+flask --app app run --debug
 ```
 
 Then open:
@@ -336,7 +405,6 @@ The scheduler uses a cron-style trigger:
 Every day, every hour from 12:00 to 18:00, at minute 0.
 ```
 
-
 ## Running Flask and Scheduler Together
 
 The Flask application and the scheduler can be run at the same time using two separate terminals.
@@ -368,6 +436,7 @@ python-dotenv
 apscheduler
 pdfplumber
 pandas
+requests
 ```
 
 Depending on the database used, an additional driver may be required.
@@ -378,6 +447,24 @@ For PostgreSQL, for example:
 psycopg2-binary
 ```
 
+## Git Ignore Notes
+
+The repository should not include sensitive or generated files.
+
+Recommended `.gitignore` entries:
+
+```gitignore
+.venv/
+__pycache__/
+*.pyc
+
+.env
+
+uploads/*
+generated/*
+```
+
+This keeps uploaded PDFs and generated CSV files out of GitHub.
 
 ## Main Application Flow
 
@@ -385,6 +472,10 @@ psycopg2-binary
 scraper.py
     ↓
 Extracts products from website
+    ↓
+exchange_rate_service.py
+    ↓
+Retrieves exchange rates and calculates price in RON
     ↓
 repository.py
     ↓
@@ -417,8 +508,13 @@ Downloads CSV in browser
 - Save products into the database
 - Prevent duplicate products by title
 - Update existing products when scraped data changes
+- Store original price and currency
+- Retrieve exchange rates from BNR XML
+- Convert product prices to RON
 - Display products in a web page
+- Search products by title
 - Edit existing products
+- Recalculate RON price after product edit
 - Delete existing products
 - Schedule automatic scraping
 - Upload invoice PDF files
@@ -430,10 +526,13 @@ Downloads CSV in browser
 
 Possible improvements for this project:
 
-- Add flash messages after edit/delete/upload actions
+- Add better flash messages after edit/delete/upload actions
 - Add stronger validation for uploaded PDF files
 - Add error handling for unsupported invoice formats
 - Add logging instead of simple terminal output
 - Add pagination in the Flask product interface
+- Add advanced sorting and filtering
+- Add caching for exchange rates per scraping run
 - Add Docker support
-- Add unit tests for repository and parser functions
+- Add unit tests for repository, parser, and exchange rate service functions
+- Deploy the application online
