@@ -83,7 +83,8 @@ body {
 }
 
 .controls a,
-.controls button {
+.controls button,
+#logout-btn{
     padding: 8px 14px;
     border-radius: 5px;
     border: none;
@@ -93,15 +94,16 @@ body {
     text-align: center;
 }
 
-.controls a {
+.controls a{
     background-color: #2563eb;
     color: white;
 }
 
-.controls button {
+.controls button, #logout-btn {
     background-color: #dc2626;
     color: white;
 }
+
 
 
 
