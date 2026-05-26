@@ -15,7 +15,7 @@ class Product(Base):
     title: Mapped[str] = mapped_column(unique=True, nullable=False)
     img: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    price: Mapped[str] = mapped_column(nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(nullable=False)
     exchange_rate: Mapped[Decimal] = mapped_column(Numeric(10,4), nullable=False)
     price_ron: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)

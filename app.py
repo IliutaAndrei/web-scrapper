@@ -1,7 +1,7 @@
 import os.path
 from datetime import datetime
 
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, send_file
 from werkzeug.utils import secure_filename
 
 from repository import get_all_products, get_product_by_id, update_product, delete_product, search_product_by_title
@@ -16,11 +16,11 @@ ALLOWED_EXTENSIONS = {'pdf'}
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.secret_key = "dev-secret-key"
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route("/")
 def home():
@@ -28,6 +28,7 @@ def home():
         products = get_all_products(session)
 
         return render_template("home.html", products=products)
+
 
 @app.route("/products")
 def get_all_products_page():
@@ -41,6 +42,7 @@ def get_all_products_page():
             products = get_all_products(session)
 
         return render_template("products.html", products=products, search=search)
+
 
 @app.route("/products/<product_id>/edit", methods=["GET", "POST"])
 def edit_product_page(product_id):
@@ -58,8 +60,10 @@ def edit_product_page(product_id):
                 "price": request.form["price"],
                 "currency": request.form["currency"]
             }
-            update_product(session, product_id, new_product)
-
+            try:
+                update_product(session, product_id, new_product)
+            except ValueError as error:
+                return render_template("edit_product.html", product=product, error=error)
             return redirect(url_for("get_all_products_page"))
 
         return render_template("edit_product.html", product=product)
@@ -78,18 +82,17 @@ def delete_product_page(product_id):
 
         return redirect(url_for("get_all_products_page"))
 
+
 @app.route("/invoices/upload", methods=["GET", "POST"])
 def upload_invoices():
     if request.method == "POST":
         if 'pdf' not in request.files:
-            flash("No file part", "error")
             return redirect(request.url)
 
         file = request.files["pdf"]
         original_filename = file.filename
 
         if not original_filename:
-            flash("No selected file", "error")
             return redirect(request.url)
 
         if file and allowed_file(original_filename):
@@ -106,7 +109,6 @@ def upload_invoices():
             products = extract_products_from_pdf(file_path)
             generate_products_csv(products,csv_path)
 
-            flash("File uploaded", "success")
             return send_file(csv_path, as_attachment=True, download_name=f"{timestamp}_invoice.csv")
 
     return render_template("upload_invoice.html")

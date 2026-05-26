@@ -9,7 +9,6 @@ def run_scraper():
     with SessionLocal() as session:
         save_products_to_db(products_data, session)
 
-    print(f"Processed {len(products_data)} products")
 
 
 if __name__ == "__main__":
