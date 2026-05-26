@@ -1,6 +1,6 @@
 # Web Products Scraper & Invoice Parser
 
-A Python web application that logs into a target website, scrapes product data, stores it in a SQL database, and provides a simple Flask interface for viewing, searching, editing, and deleting products.
+A Python web application that uses a simple admin authentication system, logs into a target website, scrapes product data, stores it in a SQL database, and provides a Flask interface for viewing, searching, editing, and deleting products.
 
 The project also includes a PDF invoice parser. Users can upload invoice PDF files, extract product information, generate a CSV file, and download it directly from the web interface.
 
@@ -14,6 +14,7 @@ This project was built as a technical task focused on:
 
 - Web scraping
 - Login-based automation
+- Simple admin authentication
 - Database persistence
 - Flask web development
 - Product CRUD operations
@@ -24,7 +25,7 @@ This project was built as a technical task focused on:
 
 The scraper logs into a target website, extracts product information, and saves the data into a database.
 
-The Flask interface allows users to:
+The Flask interface is protected by a simple login system. After authentication, the user can:
 
 - View all saved products
 - Search products by title
@@ -32,6 +33,7 @@ The Flask interface allows users to:
 - Delete products
 - Upload invoice PDFs
 - Download extracted invoice data as CSV
+- Log out from the application
 
 For scraped products, the application stores the original price, currency, exchange rate, and price converted to RON.
 
@@ -39,10 +41,22 @@ For scraped products, the application stores the original price, currency, excha
 
 ## Features
 
+### Authentication
+
+- Simple admin login system
+- Admin credentials loaded from `.env`
+- Flask session-based authentication
+- Secret key configuration using environment variables
+- Global route protection using `before_request`
+- Automatic redirect to the login page for unauthenticated users
+- Logout functionality
+- Login error message for invalid credentials
+
 ### Web Scraping & Product Management
 
 - Login-based web scraping using Playwright
 - Product data extraction using BeautifulSoup
+- Product pagination handling
 - SQL database integration using SQLAlchemy ORM
 - Duplicate prevention using unique product titles
 - Existing product update when scraped data changes
@@ -143,12 +157,15 @@ web-products-scraper/
 ├── static/
 │   ├── edit.css
 │   ├── home.css
+│   ├── login.css
 │   ├── invoices.css
 │   └── products.css
 │
 ├── templates/
 │   ├── edit_product.html
 │   ├── home.html
+│   ├── login.html
+│   ├── login.html
 │   ├── products.html
 │   └── upload_invoice.html
 │
@@ -172,7 +189,41 @@ web-products-scraper/
 
 ## How It Works
 
-### 1. Web Scraping
+### 1. Authentication
+
+The Flask application uses a simple admin authentication system.
+
+Admin credentials are stored in the `.env` file and loaded through `config.py`.
+
+The authentication flow is:
+
+```text
+User opens the application
+    ↓
+If not authenticated, user is redirected to /login
+    ↓
+User enters admin username and password
+    ↓
+Credentials are compared with values from .env
+    ↓
+If valid, Flask stores the login state in session
+    ↓
+User is redirected to the home page
+```
+
+The application uses Flask sessions:
+
+```text
+session["is_logged_in"] = True
+```
+
+A global `before_request` check protects the application routes. Only the login route and static files are accessible without authentication.
+
+Logout removes the login state from the session and redirects the user back to the login page.
+
+---
+
+### 2. Web Scraping
 
 The scraper uses Playwright to open a browser, log into the target website, and access the products page.
 
@@ -192,7 +243,7 @@ The scraper also handles pagination and continues scraping until there is no nex
 
 ---
 
-### 2. Price Parsing & Currency Conversion
+### 3. Price Parsing & Currency Conversion
 
 The scraped price is initially extracted as text.
 
@@ -226,7 +277,7 @@ price_ron = price * exchange_rate
 
 ---
 
-### 3. Database Storage
+### 4. Database Storage
 
 Products are stored in a SQL database using SQLAlchemy ORM.
 
@@ -251,17 +302,29 @@ The product price and price in RON are stored as numeric values using Decimal/Nu
 
 ---
 
-### 4. Flask Web Interface
+### 5. Flask Web Interface
 
-The Flask application provides a simple interface where products can be viewed, searched, edited, and deleted.
+The Flask application provides a simple interface where authenticated users can view, search, edit, and delete products.
 
 Available routes:
+
+```text
+/login
+```
+
+Displays the login page and processes login form submissions.
+
+```text
+/logout
+```
+
+Logs out the current user and redirects to the login page.
 
 ```text
 /
 ```
 
-Displays the home page.
+Displays the home page after login.
 
 ```text
 /products
@@ -293,7 +356,7 @@ Deletes an existing product.
 
 ---
 
-### 5. PDF Invoice Upload & CSV Export
+### 6. PDF Invoice Upload & CSV Export
 
 The application includes a PDF invoice upload page.
 
@@ -344,8 +407,12 @@ BNR_URL=https://curs.bnr.ro/nbrfxrates.xml
 BASE_PAGE_URL=https://www.web-scraping.dev
 LOGIN_URL=https://www.web-scraping.dev/login
 
-SCRAPER_USERNAME=your_username
-SCRAPER_PASSWORD=your_password
+SCRAPER_USERNAME=your_scraper_username
+SCRAPER_PASSWORD=your_scraper_password
+
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your_admin_password
+SECRET_KEY=your_secret_key
 ```
 
 Do not commit the real `.env` file to GitHub.
@@ -475,6 +542,18 @@ Then open:
 http://127.0.0.1:5000/
 ```
 
+If the user is not authenticated, the application redirects to:
+
+```text
+http://127.0.0.1:5000/login
+```
+
+After login, the user can access:
+
+```text
+http://127.0.0.1:5000/
+```
+
 Products page:
 
 ```text
@@ -525,11 +604,33 @@ Terminal 2:
 python scheduler.py
 ```
 
-The Flask app handles the user interface, while the scheduler handles automatic scraping.
+The Flask app handles the authenticated web interface, while the scheduler handles automatic scraping.
 
 ---
 
 ## Main Application Flow
+
+### Authentication flow
+
+```text
+User opens protected route
+    ↓
+before_request checks login session
+    ↓
+If not logged in, redirect to /login
+    ↓
+User submits admin credentials
+    ↓
+Credentials are validated using values from .env
+    ↓
+Session is created
+    ↓
+User is redirected to home page
+    ↓
+User can access products and invoice upload pages
+    ↓
+Logout removes session login state
+```
 
 ### Product scraping flow
 
@@ -577,6 +678,11 @@ Downloads CSV in browser
 
 ## Current Functionalities
 
+- Simple admin login system
+- Session-based route protection
+- Redirect unauthenticated users to the login page
+- Logout functionality
+- Display login error messages
 - Scrape products from the target website
 - Log in before scraping
 - Handle product pagination
@@ -631,11 +737,27 @@ generated/*
 
 ---
 
+## Security Notes
+
+This project uses a simple authentication system with one admin user stored in environment variables.
+
+This is suitable for a small project or technical task, but for a production application, improvements would be needed, such as:
+
+- Password hashing
+- User accounts stored in the database
+- CSRF protection
+- Stronger session security
+- Role-based access control
+- Better error handling and logging
+
+---
+
 ## Future Improvements
 
 Possible improvements for this project:
 
-- Add flash messages after edit, delete, and upload actions
+- Add flash messages after edit, delete, upload, login, and logout actions
+- Add password hashing for admin credentials
 - Add stronger validation for uploaded PDF files
 - Add error handling for unsupported invoice formats
 - Add logging instead of simple terminal output
@@ -643,6 +765,6 @@ Possible improvements for this project:
 - Add advanced sorting and filtering
 - Improve exchange rate caching
 - Add Docker support
-- Add unit tests for price parsing, repository logic, PDF parsing, and exchange rate retrieval
+- Add unit tests for price parsing, repository logic, PDF parsing, exchange rate retrieval, and authentication flow
 - Rename `main.py` to `run_scraper.py` for better clarity
 - Deploy the application online
