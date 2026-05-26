@@ -1,7 +1,7 @@
 import os.path
 from datetime import datetime
 
-from flask import Flask, render_template, request, redirect, url_for, send_file
+from flask import Flask, render_template, request, redirect, url_for, send_file, session as login_session
 from werkzeug.utils import secure_filename
 
 from repository import get_all_products, get_product_by_id, update_product, delete_product, search_product_by_title
@@ -9,23 +9,49 @@ from database import SessionLocal
 from services.csv_generator import generate_products_csv
 from services.pdf_parser import extract_products_from_pdf
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-GENERATED_FOLDER= os.path.join(BASE_DIR, "generated")
-ALLOWED_EXTENSIONS = {'pdf'}
-
+from config import SESSION_SECRET_KEY, UPLOAD_FOLDER, allowed_file, GENERATED_FOLDER, ADMIN_PASSWORD, ADMIN_USERNAME
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["SECRET_KEY"] = SESSION_SECRET_KEY
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@app.before_request
+def require_login():
+    allowed_routes = ["login", "static"]
+
+    if request.endpoint in allowed_routes:
+        return None
+
+    if login_session.get("is_logged_in"):
+        return None
+
+    return redirect(url_for("login"))
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            login_session["is_logged_in"] = True
+
+            return redirect(url_for("home"))
+
+        return render_template("login.html", error="Invalid username or password")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    login_session.pop("is_logged_in", None)
+
+    return redirect(url_for("login"))
 
 
 @app.route("/")
 def home():
-    with SessionLocal() as session:
-        products = get_all_products(session)
+    with SessionLocal() as db_session:
+        products = get_all_products(db_session)
 
         return render_template("home.html", products=products)
 
@@ -34,20 +60,20 @@ def home():
 def get_all_products_page():
     search = request.args.get("search")
 
-    with SessionLocal() as session:
+    with SessionLocal() as db_session:
 
         if search:
-            products = search_product_by_title(session, search)
+            products = search_product_by_title(db_session, search)
         else:
-            products = get_all_products(session)
+            products = get_all_products(db_session)
 
         return render_template("products.html", products=products, search=search)
 
 
 @app.route("/products/<product_id>/edit", methods=["GET", "POST"])
 def edit_product_page(product_id):
-    with SessionLocal() as session:
-        product = get_product_by_id(session, product_id)
+    with SessionLocal() as db_session:
+        product = get_product_by_id(db_session, product_id)
 
         if not product:
             return "No product Found", 404
@@ -61,7 +87,7 @@ def edit_product_page(product_id):
                 "currency": request.form["currency"]
             }
             try:
-                update_product(session, product_id, new_product)
+                update_product(db_session, product_id, new_product)
             except ValueError as error:
                 return render_template("edit_product.html", product=product, error=error)
             return redirect(url_for("get_all_products_page"))
@@ -71,14 +97,14 @@ def edit_product_page(product_id):
 
 @app.route("/products/<product_id>/delete", methods=["POST"])
 def delete_product_page(product_id):
-    with SessionLocal() as session:
-        product = get_product_by_id(session, product_id)
+    with SessionLocal() as db_session:
+        product = get_product_by_id(db_session, product_id)
 
         if not product:
             return "No product found", 404
 
         if request.method == "POST":
-            delete_product(session, product_id)
+            delete_product(db_session, product_id)
 
         return redirect(url_for("get_all_products_page"))
 
