@@ -105,25 +105,31 @@ Example CSV structure:
 product_code,product_name,unit_price,currency,quantity
 172812FXX,COMUTATOR PORNIRE FEBIXX,251.96,RON,-1
 ```
-```
-Technologies Used
-```
 
-Python
-Flask
-SQLAlchemy
-Playwright
-BeautifulSoup
-APScheduler
-pdfplumber
-pandas
-requests
-python-dotenv
-Werkzeug
-HTML
-CSS
-SQL database
-Project Structure
+---
+
+## Technologies Used
+
+- Python
+- Flask
+- SQLAlchemy
+- Playwright
+- BeautifulSoup
+- APScheduler
+- pdfplumber
+- pandas
+- requests
+- python-dotenv
+- Werkzeug
+- HTML
+- CSS
+- SQL database
+
+---
+
+## Project Structure
+
+```text
 web-products-scraper/
 │
 ├── generated/
@@ -160,11 +166,13 @@ web-products-scraper/
 ├── scheduler.py
 ├── scraper.py
 └── README.md
+```
 
-How It Works
-```
-1. Web Scraping
-```
+---
+
+## How It Works
+
+### 1. Web Scraping
 
 The scraper uses Playwright to open a browser, log into the target website, and access the products page.
 
@@ -172,50 +180,59 @@ After the page is loaded, BeautifulSoup parses the HTML and extracts product inf
 
 The extracted data includes:
 
+```text
 title
 image URL
 description
 price
 currency
+```
 
 The scraper also handles pagination and continues scraping until there is no next page available.
 
-```
-2. Price Parsing & Currency Conversion
-```
+---
+
+### 2. Price Parsing & Currency Conversion
 
 The scraped price is initially extracted as text.
 
-The price_service.py module is responsible for:
+The `price_service.py` module is responsible for:
 
+```text
 1. Validating the price input
 2. Converting the price to Decimal
 3. Calculating the price in RON
+```
 
 Invalid prices, such as empty values, non-numeric values, zero, or negative numbers, are rejected.
 
-The exchange_rate_service.py module is responsible for:
+The `exchange_rate_service.py` module is responsible for:
 
+```text
 1. Requesting the BNR XML feed
 2. Parsing the XML response
 3. Finding the exchange rate for the product currency
 4. Returning the exchange rate as Decimal
+```
 
 Example:
 
+```text
 price = 24.99
 currency = USD
 exchange_rate = current USD/RON rate
 price_ron = price * exchange_rate
+```
 
-```
-3. Database Storage
-```
+---
+
+### 3. Database Storage
 
 Products are stored in a SQL database using SQLAlchemy ORM.
 
-The Product model contains:
+The `Product` model contains:
 
+```text
 id
 title
 img
@@ -224,34 +241,43 @@ price
 currency
 exchange_rate
 price_ron
+```
 
-The title field is unique, so duplicate products are avoided.
+The `title` field is unique, so duplicate products are avoided.
 
 When the scraper finds a product that already exists, the application updates the existing record instead of inserting a duplicate.
 
 The product price and price in RON are stored as numeric values using Decimal/Numeric types.
 
-```
-4. Flask Web Interface
-```
+---
+
+### 4. Flask Web Interface
 
 The Flask application provides a simple interface where products can be viewed, searched, edited, and deleted.
 
 Available routes:
 
+```text
 /
+```
 
 Displays the home page.
 
+```text
 /products
+```
 
 Displays all saved products.
 
+```text
 /products?search=<keyword>
+```
 
 Filters products by title.
 
+```text
 /products/<product_id>/edit
+```
 
 Allows editing an existing product.
 
@@ -259,22 +285,27 @@ When a product is edited, the application validates the price, retrieves the exc
 
 If the price is invalid, an error message is displayed on the edit page.
 
+```text
 /products/<product_id>/delete
+```
 
 Deletes an existing product.
 
-```
-5. PDF Invoice Upload & CSV Export
-```
+---
+
+### 5. PDF Invoice Upload & CSV Export
 
 The application includes a PDF invoice upload page.
 
 Available route:
 
+```text
 /invoices/upload
+```
 
 The invoice processing flow is:
 
+```text
 Upload PDF
     ↓
 Validate file extension
@@ -288,23 +319,25 @@ Parse product lines using regex
 Generate CSV using pandas
     ↓
 Return CSV as download
+```
 
-Generated CSV files are saved in the generated/ folder.
+Generated CSV files are saved in the `generated/` folder.
 
-Uploaded PDF files are saved in the uploads/ folder.
+Uploaded PDF files are saved in the `uploads/` folder.
 
 Both folders should be ignored by Git.
 
-```
-Environment Variables
-```
+---
 
-The application uses a .env file for configuration.
+## Environment Variables
 
-Create a .env file based on .env.example.
+The application uses a `.env` file for configuration.
+
+Create a `.env` file based on `.env.example`.
 
 Example:
 
+```env
 CONNECTION_STRING_DB=database_url
 
 BNR_URL=https://curs.bnr.ro/nbrfxrates.xml
@@ -313,48 +346,71 @@ LOGIN_URL=https://www.web-scraping.dev/login
 
 SCRAPER_USERNAME=your_username
 SCRAPER_PASSWORD=your_password
+```
 
-Do not commit the real .env file to GitHub.
+Do not commit the real `.env` file to GitHub.
 
 The repository should contain only:
 
+```text
 .env.example
-Installation
+```
+
+---
+
+## Installation
 
 Clone the repository:
 
+```bash
 git clone <your-repository-url>
+```
 
 Navigate into the project folder:
 
+```bash
 cd web-products-scraper
+```
 
 Create a virtual environment:
 
+```bash
 python -m venv .venv
+```
 
 Activate the virtual environment on Windows:
 
+```bash
 .venv\Scripts\activate
+```
 
 Activate the virtual environment on macOS/Linux:
 
+```bash
 source .venv/bin/activate
+```
 
 Install dependencies:
 
+```bash
 pip install -r requirements.txt
+```
 
 Install Playwright browsers:
 
+```bash
 playwright install
+```
 
-Create a .env file based on .env.example and fill in the required values.
+Create a `.env` file based on `.env.example` and fill in the required values.
 
-requirements.txt
+---
+
+## requirements.txt
 
 The project dependencies are:
 
+```txt
 flask
 sqlalchemy
 playwright
@@ -365,20 +421,29 @@ werkzeug
 pdfplumber
 pandas
 requests
+```
 
 Depending on the database used, an additional driver may be required.
 
-For PostgreSQL:
+For PostgreSQL, for example:
 
+```txt
 psycopg2-binary
-Running the Scraper Manually
+```
+
+---
+
+## Running the Scraper Manually
 
 To run the scraper manually:
 
+```bash
 python main.py
+```
 
 This will:
 
+```text
 1. Start the scraper
 2. Log in to the website
 3. Extract product data
@@ -386,30 +451,45 @@ This will:
 5. Validate and convert product prices
 6. Calculate product prices in RON
 7. Save or update products in the database
-Running the Flask Application
-
 ```
+
+---
+
+## Running the Flask Application
+
 To start the Flask web interface:
-```
 
+```bash
 flask --app app run
+```
 
 For development mode:
 
+```bash
 flask --app app run --debug
+```
 
 Then open:
 
+```text
 http://127.0.0.1:5000/
+```
 
 Products page:
 
+```text
 http://127.0.0.1:5000/products
+```
 
 Invoice upload page:
 
+```text
 http://127.0.0.1:5000/invoices/upload
-Running the Scheduler
+```
+
+---
+
+## Running the Scheduler
 
 The project includes a scheduler using APScheduler.
 
@@ -417,32 +497,43 @@ The scheduler runs the scraper every hour between 12:00 and 18:00.
 
 To start it:
 
+```bash
 python scheduler.py
+```
 
 The scheduler uses a cron-style trigger:
 
+```text
 Every day, every hour from 12:00 to 18:00, at minute 0.
-Running Flask and Scheduler Together
+```
+
+---
+
+## Running Flask and Scheduler Together
 
 The Flask application and the scheduler can be run at the same time using two separate terminals.
 
 Terminal 1:
 
+```bash
 flask --app app run --debug
+```
 
 Terminal 2:
 
+```bash
 python scheduler.py
+```
 
 The Flask app handles the user interface, while the scheduler handles automatic scraping.
-```
-Main Application Flow
-```
 
-```
-Product scraping flow
-```
+---
 
+## Main Application Flow
+
+### Product scraping flow
+
+```text
 main.py
     ↓
 scraper.py
@@ -462,10 +553,11 @@ Saves or updates products in database
 app.py
     ↓
 Displays products in Flask web interface
+```
 
-```
-Invoice processing flow
-```
+### Invoice processing flow
+
+```text
 PDF upload
     ↓
 services/pdf_parser.py
@@ -479,29 +571,78 @@ Generates CSV file
 Flask send_file
     ↓
 Downloads CSV in browser
+```
 
+---
+
+## Current Functionalities
+
+- Scrape products from the target website
+- Log in before scraping
+- Handle product pagination
+- Save products into the database
+- Prevent duplicate products by title
+- Update existing products when scraped data changes
+- Store product price as numeric value
+- Store product currency
+- Retrieve exchange rates from BNR XML
+- Convert product prices to RON
+- Validate price input
+- Display products in a web page
+- Search products by title
+- Edit existing products
+- Show validation errors on edit
+- Recalculate RON price after product edit
+- Delete existing products
+- Schedule automatic scraping
+- Upload invoice PDF files
+- Extract product data from PDF invoices
+- Generate CSV files from extracted invoice data
+- Download generated CSV files from the browser
+
+---
+
+## Git Ignore Notes
+
+The repository should not include sensitive or generated files.
+
+Recommended `.gitignore` entries:
+
+```gitignore
+.venv/
+__pycache__/
+*.pyc
+
+.env
+
+uploads/*
+generated/*
 ```
-Current Functionalities
+
+If you want to keep the `uploads/` and `generated/` folders in Git without committing their contents, add an empty `.gitkeep` file inside each folder and use:
+
+```gitignore
+uploads/*
+!uploads/.gitkeep
+
+generated/*
+!generated/.gitkeep
 ```
-Scrape products from the target website
-Log in before scraping
-Handle product pagination
-Save products into the database
-Prevent duplicate products by title
-Update existing products when scraped data changes
-Store product price as numeric value
-Store product currency
-Retrieve exchange rates from BNR XML
-Convert product prices to RON
-Validate price input
-Display products in a web page
-Search products by title
-Edit existing products
-Show validation errors on edit
-Recalculate RON price after product edit
-Delete existing products
-Schedule automatic scraping
-Upload invoice PDF files
-Extract product data from PDF invoices
-Generate CSV files from extracted invoice data
-Download generated CSV files from the browser
+
+---
+
+## Future Improvements
+
+Possible improvements for this project:
+
+- Add flash messages after edit, delete, and upload actions
+- Add stronger validation for uploaded PDF files
+- Add error handling for unsupported invoice formats
+- Add logging instead of simple terminal output
+- Add pagination in the Flask product interface
+- Add advanced sorting and filtering
+- Improve exchange rate caching
+- Add Docker support
+- Add unit tests for price parsing, repository logic, PDF parsing, and exchange rate retrieval
+- Rename `main.py` to `run_scraper.py` for better clarity
+- Deploy the application online
