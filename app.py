@@ -2,14 +2,16 @@ import os.path
 from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, send_file, session as login_session
+from sqlalchemy.orm import Session
 from werkzeug.utils import secure_filename
 
 from repository import get_all_products, get_product_by_id, update_product, delete_product, search_product_by_title
-from database import SessionLocal
+from database import engine
 from services.csv_generator import generate_products_csv
 from services.pdf_parser import extract_products_from_pdf
 
 from config import SESSION_SECRET_KEY, UPLOAD_FOLDER, allowed_file, GENERATED_FOLDER, ADMIN_PASSWORD, ADMIN_USERNAME
+
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["SECRET_KEY"] = SESSION_SECRET_KEY
@@ -50,7 +52,7 @@ def logout():
 
 @app.route("/")
 def home():
-    with SessionLocal() as db_session:
+    with Session(engine) as db_session:
         products = get_all_products(db_session)
 
         return render_template("home.html", products=products)
@@ -60,7 +62,7 @@ def home():
 def get_all_products_page():
     search = request.args.get("search")
 
-    with SessionLocal() as db_session:
+    with Session(engine) as db_session:
 
         if search:
             products = search_product_by_title(db_session, search)
@@ -70,9 +72,9 @@ def get_all_products_page():
         return render_template("products.html", products=products, search=search)
 
 
-@app.route("/products/<product_id>/edit", methods=["GET", "POST"])
+@app.route("/products/<int:product_id>/edit", methods=["GET", "POST"])
 def edit_product_page(product_id):
-    with SessionLocal() as db_session:
+    with Session(engine) as db_session:
         product = get_product_by_id(db_session, product_id)
 
         if not product:
@@ -87,24 +89,30 @@ def edit_product_page(product_id):
                 "currency": request.form["currency"]
             }
             try:
-                update_product(db_session, product_id, new_product)
+                updated_product = update_product(db_session, product_id, new_product)
             except ValueError as error:
                 return render_template("edit_product.html", product=product, error=error)
+
+            if not updated_product:
+                return render_template("edit_product.html",
+                                       product=product,
+                                       error="Check the currency")
+
             return redirect(url_for("get_all_products_page"))
 
         return render_template("edit_product.html", product=product)
 
 
-@app.route("/products/<product_id>/delete", methods=["POST"])
+@app.route("/products/<int:product_id>/delete", methods=["POST"])
 def delete_product_page(product_id):
-    with SessionLocal() as db_session:
+    with Session(engine) as db_session:
         product = get_product_by_id(db_session, product_id)
 
         if not product:
             return "No product found", 404
 
-        if request.method == "POST":
-            delete_product(db_session, product_id)
+
+        delete_product(db_session, product_id)
 
         return redirect(url_for("get_all_products_page"))
 

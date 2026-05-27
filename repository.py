@@ -22,9 +22,8 @@ def save_products_to_db(products_data, session: Session):
         price = parse_price(product["price"])
         price_ron = get_price_in_ron(price, exchange_rate)
 
-        existing_product = session.query(Product).filter_by(
-            title=product["title"]
-        ).first()
+        stmt = select(Product).where(Product.title == product["title"])
+        existing_product = session.scalar(stmt)
 
         if existing_product:
             existing_product.img = product["img"]
@@ -49,13 +48,13 @@ def save_products_to_db(products_data, session: Session):
 
 
 def get_product_by_id(session: Session, product_id):
-    statement = select(Product).where(Product.id == product_id)
-
-    return session.scalar(statement)
+    return session.get(Product, product_id)
 
 
 def get_all_products(session: Session):
-    return session.query(Product).all()
+    stmt = select(Product)
+
+    return session.scalars(stmt).all()
 
 
 def update_product(session: Session, product_id, new_product):
@@ -100,6 +99,8 @@ def delete_product(session: Session, product_id):
 
 
 def search_product_by_title(session: Session, keyword):
-    return session.query(Product).filter(
+    stmt = select(Product).where(
         Product.title.ilike(f"%{keyword}%")
-    ).all()
+    )
+
+    return session.scalars(stmt).all()
