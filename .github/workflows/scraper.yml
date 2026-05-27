@@ -23,7 +23,7 @@ jobs:
         run: playwright install --with-deps chromium
 
       - name: Run scraper
-        run: python scraper.py
+        run: python main.py
         env:
           CONNECTION_STRING_DB: ${{ secrets.CONNECTION_STRING_DB }}
           BNR_URL: ${{ secrets.BNR_URL }}
