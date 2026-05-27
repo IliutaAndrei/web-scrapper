@@ -70,7 +70,7 @@ def scrape_products() -> list[dict]:
     products_data = []
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=100)
+        browser = p.chromium.launch(headless=True, slow_mo=100)
         page = browser.new_page()
 
         login(page, LOGIN_URL, PAGE_USERNAME, PAGE_PASSWORD)
