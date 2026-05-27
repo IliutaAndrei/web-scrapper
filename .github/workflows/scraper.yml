@@ -1,0 +1,35 @@
+name: Run scraper
+
+on: workflow_dispatch
+
+jobs:
+  scrape-products:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browser
+        run: playwright install
+
+      - name: Run scraper
+        run: python main.py
+        env:
+          CONNECTION_STRING_DB: ${{ secrets.CONNECTION_STRING_DB }}
+          BNR_URL: ${{ secrets.BNR_URL }}
+          BASE_PAGE_URL: ${{ secrets.BASE_PAGE_URL }}
+          LOGIN_URL: ${{ secrets.LOGIN_URL }}
+          SCRAPER_USERNAME: ${{ secrets.SCRAPER_USERNAME }}
+          SCRAPER_PASSWORD: ${{ secrets.SCRAPER_PASSWORD }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
