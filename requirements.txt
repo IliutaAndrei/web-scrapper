@@ -8,3 +8,4 @@ werkzeug
 pdfplumber
 pandas
 requests
+gunicorn
