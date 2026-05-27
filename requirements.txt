@@ -3,6 +3,7 @@ sqlalchemy
 playwright
 beautifulsoup4
 python-dotenv
+psycopg2-binary
 apscheduler
 werkzeug
 pdfplumber
